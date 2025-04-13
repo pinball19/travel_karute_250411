@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { 
   Dialog, 
   DialogTitle, 
@@ -7,9 +6,10 @@ import {
   DialogActions, 
   TextField, 
   Button, 
-  Box, 
-  Typography
+  Box
 } from '@mui/material';
+import { DateInput, CurrencyInput } from '../components/common';
+import { useFormState } from '../hooks';
 
 /**
  * 入金情報の追加/編集モーダル
@@ -21,18 +21,36 @@ import {
  * @param {Function} props.onSave - 保存時のコールバック関数
  */
 const PaymentModal = ({ open, payment, onClose, onSave }) => {
-  const [formData, setFormData] = React.useState({
+  // カスタムフックを使用してフォーム状態を管理
+  const initialState = {
     dueDate: '',
     date: '',
     amount: '',
     place: '',
     notes: ''
-  });
+  };
+
+  const handleSubmit = (data) => {
+    // 数値に変換
+    const paymentData = {
+      ...data,
+      amount: parseFloat(data.amount) || 0
+    };
+    
+    onSave(paymentData);
+  };
+
+  const { 
+    formData, 
+    handleChange, 
+    resetForm,
+    handleSubmit: submitForm
+  } = useFormState(initialState, handleSubmit);
 
   // payment が変更されたときにフォームデータを更新
   React.useEffect(() => {
     if (payment) {
-      setFormData({
+      resetForm({
         dueDate: payment.dueDate || '',
         date: payment.date || '',
         amount: payment.amount || '',
@@ -41,30 +59,9 @@ const PaymentModal = ({ open, payment, onClose, onSave }) => {
       });
     } else {
       // 新規作成時は初期化
-      setFormData({
-        dueDate: '',
-        date: '',
-        amount: '',
-        place: '',
-        notes: ''
-      });
+      resetForm(initialState);
     }
-  }, [payment, open]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = () => {
-    // 数値に変換
-    const paymentData = {
-      ...formData,
-      amount: parseFloat(formData.amount) || 0
-    };
-    
-    onSave(paymentData);
-  };
+  }, [payment, open, resetForm]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -73,37 +70,23 @@ const PaymentModal = ({ open, payment, onClose, onSave }) => {
       </DialogTitle>
       <DialogContent>
         <Box component="form" sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            fullWidth
+          <DateInput
             label="入金予定日"
-            type="date"
             name="dueDate"
             value={formData.dueDate}
             onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
           />
-          <TextField
-            margin="normal"
-            fullWidth
+          <DateInput
             label="入金日"
-            type="date"
             name="date"
             value={formData.date}
             onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
           />
-          <TextField
-            margin="normal"
-            fullWidth
+          <CurrencyInput
             label="入金額"
-            type="number"
             name="amount"
             value={formData.amount}
             onChange={handleChange}
-            InputProps={{
-              endAdornment: <Typography sx={{ ml: 1 }}>円</Typography>,
-            }}
           />
           <TextField
             margin="normal"
@@ -127,7 +110,7 @@ const PaymentModal = ({ open, payment, onClose, onSave }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>キャンセル</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
+        <Button onClick={submitForm} variant="contained" color="primary">
           保存
         </Button>
       </DialogActions>

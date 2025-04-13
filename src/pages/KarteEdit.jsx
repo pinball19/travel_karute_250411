@@ -35,6 +35,7 @@ import ExpenseInfo from '../components/ExpenseInfo';
 import SummaryInfo from '../components/SummaryInfo';
 import MemoSection from '../components/MemoSection';
 import CommentSection from '../components/CommentSection';
+import SalesDetails from '../components/SalesDetails';
 import KarteListModal from '../modals/KarteListModal';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -78,6 +79,7 @@ const KarteEdit = () => {
     payments,
     expenses,
     comments,
+    salesDetails,
     hasChanges,
     lastSaved,
     loading,
@@ -342,8 +344,10 @@ const KarteEdit = () => {
               sx={{ 
                 flexGrow: 1, 
                 fontWeight: 'bold', 
-                fontSize: { xs: '1rem', sm: '1.25rem' }
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+                cursor: 'pointer'
               }}
+              onClick={() => navigate('/')}
             >
               団体ナビ成約カルテ
             </Typography>
@@ -508,6 +512,9 @@ const KarteEdit = () => {
         </StatusBar>
         
         <BasicInfo />
+        <Divider sx={{ my: 3 }} />
+        
+        <SalesDetails />
         <Divider sx={{ my: 3 }} />
         
         <PaymentInfo />

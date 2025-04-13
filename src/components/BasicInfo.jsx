@@ -1,16 +1,23 @@
 import React from 'react';
-
 import { useKarte } from '../context/KarteContext';
-import { TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText, Grid, Paper, Typography } from '@mui/material';
+import { 
+  TextField, 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  InputLabel, 
+  FormHelperText, 
+  Grid, 
+  Paper, 
+  Typography,
+  Box
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
+import ClientInput from './ClientInput';
 
 const FormPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   marginBottom: theme.spacing(3),
-}));
-
-const FormSection = styled('div')(({ theme }) => ({
-  marginBottom: theme.spacing(2),
 }));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -21,9 +28,60 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
 }));
 
-const BasicInfo = () => {
-  const { karteData, updateField } = useKarte();
+const ClientFieldsContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(0, 0, 2, 0),
+}));
 
+const BasicInfo = () => {
+  const { 
+    karteData, 
+    updateField,
+    saveKarte
+  } = useKarte();
+  
+  // 都道府県のリスト
+  const prefectures = [
+    '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+    '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+    '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+    '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+    '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+    '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+    '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
+  ];
+  
+  // 国内主要空港の3レターコード
+  const domesticAirports = [
+    { code: 'HND', name: '東京/羽田 (HND)' },
+    { code: 'NRT', name: '東京/成田 (NRT)' },
+    { code: 'KIX', name: '大阪/関西 (KIX)' },
+    { code: 'ITM', name: '大阪/伊丹 (ITM)' },
+    { code: 'NGO', name: '名古屋/中部 (NGO)' },
+    { code: 'FUK', name: '福岡 (FUK)' },
+    { code: 'CTS', name: '札幌/新千歳 (CTS)' },
+    { code: 'OKA', name: '沖縄/那覇 (OKA)' },
+    { code: 'KOJ', name: '鹿児島 (KOJ)' },
+    { code: 'HIJ', name: '広島 (HIJ)' },
+    { code: 'KMJ', name: '熊本 (KMJ)' },
+    { code: 'SDJ', name: '仙台 (SDJ)' }
+  ];
+  
+  // 海外主要都市の3レターコード
+  const internationalCities = [
+    { code: 'JFK', name: 'ニューヨーク (JFK)' },
+    { code: 'LAX', name: 'ロサンゼルス (LAX)' },
+    { code: 'LHR', name: 'ロンドン (LHR)' },
+    { code: 'CDG', name: 'パリ (CDG)' },
+    { code: 'SIN', name: 'シンガポール (SIN)' },
+    { code: 'BKK', name: 'バンコク (BKK)' },
+    { code: 'HKG', name: '香港 (HKG)' },
+    { code: 'PVG', name: '上海 (PVG)' },
+    { code: 'PEK', name: '北京 (PEK)' },
+    { code: 'ICN', name: 'ソウル (ICN)' },
+    { code: 'TPE', name: '台北 (TPE)' },
+    { code: 'SYD', name: 'シドニー (SYD)' }
+  ];
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     updateField(name, value);
@@ -34,6 +92,11 @@ const BasicInfo = () => {
       // カルテ番号から既存の接頭辞を取り除く
       const numericPart = karteData.karteNo.replace(/^[DI]-/, '');
       updateField('karteNo', `${prefix}-${numericPart}`);
+      
+      // 出発地と行き先をリセット
+      updateField('departurePlace', '');
+      updateField('destination', '');
+      updateField('destinationOther', '');
     }
 
     // 行き先が「その他」の場合の処理
@@ -41,10 +104,14 @@ const BasicInfo = () => {
       // その他の入力欄を表示する処理は親コンポーネントで処理
     }
   };
+  
+  // 不要な関数やコンポーネントをすべて削除
 
   return (
     <FormPaper elevation={2}>
       <SectionTitle variant="h6">◆ 基本情報</SectionTitle>
+      
+      {/* クライアント関連のダイアログは削除 */}
       
       <Grid container spacing={3}>
         {/* 国内/海外 */}
@@ -80,69 +147,57 @@ const BasicInfo = () => {
 
         {/* 自社担当者 */}
         <Grid size={{xs: 12}}>
-          <TextField
-            fullWidth
-            id="company-person"
-            name="companyPerson"
-            label="自社担当者"
-            value={karteData.companyPerson || ''}
-            onChange={handleChange}
-            placeholder="自社担当者名"
-          />
+          <FormControl fullWidth>
+            <InputLabel id="company-person-label">自社担当者</InputLabel>
+            <Select
+              labelId="company-person-label"
+              id="company-person"
+              name="companyPerson"
+              value={karteData.companyPerson || ''}
+              label="自社担当者"
+              onChange={handleChange}
+            >
+              <MenuItem value="">選択してください</MenuItem>
+              <MenuItem value="青木">青木</MenuItem>
+              <MenuItem value="石井">石井</MenuItem>
+              <MenuItem value="白木">白木</MenuItem>
+              <MenuItem value="山口">山口</MenuItem>
+              <MenuItem value="原">原</MenuItem>
+              <MenuItem value="その他">その他</MenuItem>
+            </Select>
+          </FormControl>
         </Grid>
 
-        {/* クライアント会社名 */}
-        <Grid size={{xs: 12}}>
-          <TextField
-            fullWidth
-            id="client-company"
-            name="clientCompany"
-            label="クライアント会社名"
-            value={karteData.clientCompany || ''}
-            onChange={handleChange}
-            placeholder="クライアント会社名"
-          />
-        </Grid>
-
-        {/* クライアント担当者 */}
-        <Grid size={{xs: 12}}>
-          <TextField
-            fullWidth
-            id="client-person"
-            name="clientPerson"
-            label="クライアント担当者"
-            value={karteData.clientPerson || ''}
-            onChange={handleChange}
-            placeholder="担当者名"
-          />
-        </Grid>
-
-        {/* 電話番号 */}
-        <Grid size={{xs: 12}}>
-          <TextField
-            fullWidth
-            id="client-phone"
-            name="clientPhone"
-            label="電話番号"
-            value={karteData.clientPhone || ''}
-            onChange={handleChange}
-            placeholder="電話番号"
-            type="tel"
-          />
-        </Grid>
-
-        {/* メールアドレス */}
-        <Grid size={{xs: 12}}>
-          <TextField
-            fullWidth
-            id="client-email"
-            name="clientEmail"
-            label="メールアドレス"
-            value={karteData.clientEmail || ''}
-            onChange={handleChange}
-            placeholder="メールアドレス"
-            type="email"
-          />
+        {/* クライアント情報グループ */}
+        <Grid item xs={12}>
+          <ClientFieldsContainer>
+            <Typography variant="subtitle2" gutterBottom>クライアント情報</Typography>
+            
+            {/* 新しいClientInputコンポーネントを使用 */}
+            <ClientInput 
+              value={{
+                company: karteData.clientCompany || '',
+                contactPerson: karteData.clientPerson || '',
+                phone: karteData.clientPhone || '',
+                email: karteData.clientEmail || ''
+              }}
+              onChange={(clientData) => {
+                updateField('clientCompany', clientData.company || '');
+                updateField('clientPerson', clientData.contactPerson || '');
+                updateField('clientPhone', clientData.phone || '');
+                updateField('clientEmail', clientData.email || '');
+              }}
+              onSubmit={(saveClientData) => {
+                // フォーム送信時にデータを保存
+                return saveKarte().then(success => {
+                  if (success) {
+                    saveClientData();
+                  }
+                  return success;
+                });
+              }}
+            />
+          </ClientFieldsContainer>
         </Grid>
 
         {/* 出発日 */}
@@ -200,79 +255,83 @@ const BasicInfo = () => {
 
         {/* 出発地 */}
         <Grid size={{xs: 12}}>
-          <TextField
-            fullWidth
-            id="departure-place"
-            name="departurePlace"
-            label="出発地"
-            value={karteData.departurePlace || ''}
-            onChange={handleChange}
-            placeholder="出発地"
-          />
+          <FormControl fullWidth>
+            <InputLabel id="departure-place-label">出発地</InputLabel>
+            {karteData.travelType === 'domestic' ? (
+              <Select
+                labelId="departure-place-label"
+                id="departure-place"
+                name="departurePlace"
+                value={karteData.departurePlace || ''}
+                label="出発地"
+                onChange={handleChange}
+              >
+                <MenuItem value="">選択してください</MenuItem>
+                {prefectures.map((prefecture) => (
+                  <MenuItem key={prefecture} value={prefecture}>
+                    {prefecture}
+                  </MenuItem>
+                ))}
+              </Select>
+            ) : (
+              <Select
+                labelId="departure-place-label"
+                id="departure-place"
+                name="departurePlace"
+                value={karteData.departurePlace || ''}
+                label="出発地"
+                onChange={handleChange}
+              >
+                <MenuItem value="">選択してください</MenuItem>
+                {domesticAirports.map((airport) => (
+                  <MenuItem key={airport.code} value={airport.code}>
+                    {airport.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          </FormControl>
         </Grid>
 
         {/* 行き先 */}
         <Grid size={{xs: 12}}>
           <FormControl fullWidth>
             <InputLabel id="destination-label">行き先</InputLabel>
-            <Select
-              labelId="destination-label"
-              id="destination"
-              name="destination"
-              value={karteData.destination || ''}
-              label="行き先"
-              onChange={handleChange}
-            >
-              <MenuItem value="">選択してください</MenuItem>
-              <MenuItem value="北海道">北海道</MenuItem>
-              <MenuItem value="青森県">青森県</MenuItem>
-              <MenuItem value="岩手県">岩手県</MenuItem>
-              <MenuItem value="宮城県">宮城県</MenuItem>
-              <MenuItem value="秋田県">秋田県</MenuItem>
-              <MenuItem value="山形県">山形県</MenuItem>
-              <MenuItem value="福島県">福島県</MenuItem>
-              <MenuItem value="茨城県">茨城県</MenuItem>
-              <MenuItem value="栃木県">栃木県</MenuItem>
-              <MenuItem value="群馬県">群馬県</MenuItem>
-              <MenuItem value="埼玉県">埼玉県</MenuItem>
-              <MenuItem value="千葉県">千葉県</MenuItem>
-              <MenuItem value="東京都">東京都</MenuItem>
-              <MenuItem value="神奈川県">神奈川県</MenuItem>
-              <MenuItem value="新潟県">新潟県</MenuItem>
-              <MenuItem value="富山県">富山県</MenuItem>
-              <MenuItem value="石川県">石川県</MenuItem>
-              <MenuItem value="福井県">福井県</MenuItem>
-              <MenuItem value="山梨県">山梨県</MenuItem>
-              <MenuItem value="長野県">長野県</MenuItem>
-              <MenuItem value="岐阜県">岐阜県</MenuItem>
-              <MenuItem value="静岡県">静岡県</MenuItem>
-              <MenuItem value="愛知県">愛知県</MenuItem>
-              <MenuItem value="三重県">三重県</MenuItem>
-              <MenuItem value="滋賀県">滋賀県</MenuItem>
-              <MenuItem value="京都府">京都府</MenuItem>
-              <MenuItem value="大阪府">大阪府</MenuItem>
-              <MenuItem value="兵庫県">兵庫県</MenuItem>
-              <MenuItem value="奈良県">奈良県</MenuItem>
-              <MenuItem value="和歌山県">和歌山県</MenuItem>
-              <MenuItem value="鳥取県">鳥取県</MenuItem>
-              <MenuItem value="島根県">島根県</MenuItem>
-              <MenuItem value="岡山県">岡山県</MenuItem>
-              <MenuItem value="広島県">広島県</MenuItem>
-              <MenuItem value="山口県">山口県</MenuItem>
-              <MenuItem value="徳島県">徳島県</MenuItem>
-              <MenuItem value="香川県">香川県</MenuItem>
-              <MenuItem value="愛媛県">愛媛県</MenuItem>
-              <MenuItem value="高知県">高知県</MenuItem>
-              <MenuItem value="福岡県">福岡県</MenuItem>
-              <MenuItem value="佐賀県">佐賀県</MenuItem>
-              <MenuItem value="長崎県">長崎県</MenuItem>
-              <MenuItem value="熊本県">熊本県</MenuItem>
-              <MenuItem value="大分県">大分県</MenuItem>
-              <MenuItem value="宮崎県">宮崎県</MenuItem>
-              <MenuItem value="鹿児島県">鹿児島県</MenuItem>
-              <MenuItem value="沖縄県">沖縄県</MenuItem>
-              <MenuItem value="other">その他（海外など）</MenuItem>
-            </Select>
+            {karteData.travelType === 'domestic' ? (
+              <Select
+                labelId="destination-label"
+                id="destination"
+                name="destination"
+                value={karteData.destination || ''}
+                label="行き先"
+                onChange={handleChange}
+              >
+                <MenuItem value="">選択してください</MenuItem>
+                {prefectures.map((prefecture) => (
+                  <MenuItem key={prefecture} value={prefecture}>
+                    {prefecture}
+                  </MenuItem>
+                ))}
+                <MenuItem value="other">その他</MenuItem>
+              </Select>
+            ) : (
+              <Select
+                labelId="destination-label"
+                id="destination"
+                name="destination"
+                value={karteData.destination || ''}
+                label="行き先"
+                onChange={handleChange}
+              >
+                <MenuItem value="">選択してください</MenuItem>
+                {internationalCities.map((city) => (
+                  <MenuItem key={city.code} value={city.code}>
+                    {city.name}
+                  </MenuItem>
+                ))}
+                <MenuItem value="other">その他</MenuItem>
+              </Select>
+            )}
           </FormControl>
         </Grid>
 

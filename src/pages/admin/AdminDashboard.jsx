@@ -38,6 +38,8 @@ import { useAdmin } from '../../context/AdminContext';
 import { collection, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import DebugToggle from '../../components/admin/DebugToggle';
+import logger from '../../utils/logger';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
   marginTop: theme.spacing(4),
@@ -204,7 +206,7 @@ const AdminDashboard = () => {
       });
       
     } catch (err) {
-      console.error('年間データ取得エラー:', err);
+      logger.error('年間データ取得エラー:', { error: err });
     }
   };
 
@@ -232,7 +234,7 @@ const AdminDashboard = () => {
       
       setRecentKarte(karteList);
     } catch (err) {
-      console.error('最近のカルテ取得エラー:', err);
+      logger.error('最近のカルテ取得エラー:', { error: err });
     } finally {
       setRecentLoading(false);
     }
@@ -274,17 +276,30 @@ const AdminDashboard = () => {
           >
             月別レポート
           </Button>
-          <Button 
-            variant="contained" 
-            color="secondary" 
-            startIcon={<PeopleIcon />}
-            onClick={() => navigate('/admin/staff')}
-            sx={{ 
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            担当者管理
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              startIcon={<PeopleIcon />}
+              onClick={() => navigate('/admin/staff')}
+              sx={{ 
+                width: { xs: '100%', sm: 'auto' }
+              }}
+            >
+              担当者管理
+            </Button>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              startIcon={<BarChartIcon />}
+              onClick={() => navigate('/admin/staff-performance')}
+              sx={{ 
+                width: { xs: '100%', sm: 'auto' }
+              }}
+            >
+              担当者別実績
+            </Button>
+          </Box>
         </Box>
       </Header>
 
@@ -422,7 +437,10 @@ const AdminDashboard = () => {
             </Grid>
           </Grid>
 
-          {/* 総合実績の欄を削除 */}
+          {/* デバッグ設定パネル - 開発・管理者向け */}
+          {import.meta.env.DEV && (
+            <DebugToggle />
+          )}
 
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

@@ -28,6 +28,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useAdmin } from '../../context/AdminContext';
 
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -48,7 +49,9 @@ const StaffManagement = () => {
     staffList, 
     loading, 
     error, 
-    notification, 
+    notification,
+    showNotification,
+    fetchMonthlyData,
     fetchStaffList, 
     addStaff, 
     updateStaff, 
@@ -129,6 +132,86 @@ const StaffManagement = () => {
     }
   };
   
+  // 担当者別実績CSVエクスポート
+  const exportStaffStats = async () => {
+    try {
+      // 月間データを取得（現在年月）
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      
+      const monthlySummary = await fetchMonthlyData(year, month);
+      
+      // 担当者ごとのデータを集計
+      const staffStats = {};
+      
+      // 初期化
+      staffList.forEach(staff => {
+        staffStats[staff.name] = {
+          name: staff.name,
+          karteCount: 0,
+          totalRevenue: 0,
+          totalProfit: 0,
+          avgProfitRate: 0
+        };
+      });
+      
+      // データ集計
+      if (monthlySummary && monthlySummary.karteList) {
+        monthlySummary.karteList.forEach(karte => {
+          const staffName = karte.tantosha || 'Unknown';
+          if (!staffStats[staffName]) {
+            staffStats[staffName] = {
+              name: staffName,
+              karteCount: 0,
+              totalRevenue: 0,
+              totalProfit: 0,
+              avgProfitRate: 0
+            };
+          }
+          
+          staffStats[staffName].karteCount++;
+          staffStats[staffName].totalRevenue += karte.revenue || 0;
+          staffStats[staffName].totalProfit += karte.profit || 0;
+        });
+      }
+      
+      // 平均利益率計算
+      Object.keys(staffStats).forEach(name => {
+        const stat = staffStats[name];
+        if (stat.totalRevenue > 0) {
+          stat.avgProfitRate = (stat.totalProfit / stat.totalRevenue * 100).toFixed(1);
+        }
+      });
+      
+      // CSVデータを作成
+      let csvContent = "担当者,カルテ数,売上合計,利益合計,平均利益率\n";
+      
+      Object.values(staffStats).forEach(stat => {
+        csvContent += `${stat.name},${stat.karteCount},${stat.totalRevenue},${stat.totalProfit},${stat.avgProfitRate}%\n`;
+      });
+      
+      // CSVファイルをダウンロード
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const date = `${year}${String(month).padStart(2, '0')}`;
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", `staff_stats_${date}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showNotification('CSVファイルをエクスポートしました', 'success');
+      
+    } catch (error) {
+      console.error('CSV出力エラー:', error);
+      showNotification('CSVファイルの出力に失敗しました', 'error');
+    }
+  };
+
   return (
     <StyledContainer maxWidth="lg">
       <HeaderBox>
@@ -141,14 +224,23 @@ const StaffManagement = () => {
           </IconButton>
           <Typography variant="h5" component="h1">担当者管理</Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          担当者を追加
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            onClick={exportStaffStats}
+            startIcon={<FileDownloadIcon />}
+          >
+            CSV出力
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            担当者を追加
+          </Button>
+        </Box>
       </HeaderBox>
       
       {loading ? (

@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { 
   Dialog, 
   DialogTitle, 
@@ -7,13 +6,14 @@ import {
   DialogActions, 
   TextField, 
   Button, 
-  Box, 
-  Typography,
+  Box,
   FormControl,
   InputLabel,
   Select,
   MenuItem
 } from '@mui/material';
+import { DateInput, CurrencyInput, StatusChip } from '../components/common';
+import { useFormState } from '../hooks';
 
 /**
  * 支払情報の追加/編集モーダル
@@ -25,7 +25,8 @@ import {
  * @param {Function} props.onSave - 保存時のコールバック関数
  */
 const ExpenseModal = ({ open, expense, onClose, onSave }) => {
-  const [formData, setFormData] = React.useState({
+  // カスタムフックを使用してフォーム状態を管理
+  const initialState = {
     date: '',
     vendor: '',
     phone: '',
@@ -34,12 +35,29 @@ const ExpenseModal = ({ open, expense, onClose, onSave }) => {
     amount: '',
     status: '未手配',
     notes: ''
-  });
+  };
+
+  const handleSubmit = (data) => {
+    // 数値に変換
+    const expenseData = {
+      ...data,
+      amount: parseFloat(data.amount) || 0
+    };
+    
+    onSave(expenseData);
+  };
+
+  const { 
+    formData, 
+    handleChange, 
+    resetForm,
+    handleSubmit: submitForm
+  } = useFormState(initialState, handleSubmit);
 
   // expense が変更されたときにフォームデータを更新
   React.useEffect(() => {
     if (expense) {
-      setFormData({
+      resetForm({
         date: expense.date || '',
         vendor: expense.vendor || '',
         phone: expense.phone || '',
@@ -51,33 +69,9 @@ const ExpenseModal = ({ open, expense, onClose, onSave }) => {
       });
     } else {
       // 新規作成時は初期化
-      setFormData({
-        date: '',
-        vendor: '',
-        phone: '',
-        person: '',
-        dueDate: '',
-        amount: '',
-        status: '未手配',
-        notes: ''
-      });
+      resetForm(initialState);
     }
-  }, [expense, open]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = () => {
-    // 数値に変換
-    const expenseData = {
-      ...formData,
-      amount: parseFloat(formData.amount) || 0
-    };
-    
-    onSave(expenseData);
-  };
+  }, [expense, open, resetForm]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -86,15 +80,11 @@ const ExpenseModal = ({ open, expense, onClose, onSave }) => {
       </DialogTitle>
       <DialogContent>
         <Box component="form" sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            fullWidth
+          <DateInput
             label="利用日"
-            type="date"
             name="date"
             value={formData.date}
             onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
           />
           <TextField
             margin="normal"
@@ -120,27 +110,17 @@ const ExpenseModal = ({ open, expense, onClose, onSave }) => {
             value={formData.person}
             onChange={handleChange}
           />
-          <TextField
-            margin="normal"
-            fullWidth
+          <DateInput
             label="支払予定日"
-            type="date"
             name="dueDate"
             value={formData.dueDate}
             onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
           />
-          <TextField
-            margin="normal"
-            fullWidth
+          <CurrencyInput
             label="支払金額"
-            type="number"
             name="amount"
             value={formData.amount}
             onChange={handleChange}
-            InputProps={{
-              endAdornment: <Typography sx={{ ml: 1 }}>円</Typography>,
-            }}
           />
           <FormControl fullWidth margin="normal">
             <InputLabel id="expense-status-label">手配状況</InputLabel>
@@ -151,10 +131,18 @@ const ExpenseModal = ({ open, expense, onClose, onSave }) => {
               label="手配状況"
               onChange={handleChange}
             >
-              <MenuItem value="未手配">未手配</MenuItem>
-              <MenuItem value="手配中">手配中</MenuItem>
-              <MenuItem value="手配完了">手配完了</MenuItem>
-              <MenuItem value="支払済み">支払済み</MenuItem>
+              <MenuItem value="未手配">
+                <StatusChip status="未手配" size="small" />
+              </MenuItem>
+              <MenuItem value="手配中">
+                <StatusChip status="手配中" size="small" />
+              </MenuItem>
+              <MenuItem value="手配完了">
+                <StatusChip status="手配完了" size="small" />
+              </MenuItem>
+              <MenuItem value="支払済み">
+                <StatusChip status="支払済み" size="small" />
+              </MenuItem>
             </Select>
           </FormControl>
           <TextField
@@ -171,7 +159,7 @@ const ExpenseModal = ({ open, expense, onClose, onSave }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>キャンセル</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
+        <Button onClick={submitForm} variant="contained" color="primary">
           保存
         </Button>
       </DialogActions>

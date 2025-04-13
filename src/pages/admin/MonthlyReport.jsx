@@ -69,9 +69,7 @@ const MonthlyReport = () => {
   const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
   
   // チャート用データの変換
-  // src/pages/admin/MonthlyReport.js のチャートデータ関連
-// チャート用データの変換
-const chartData = React.useMemo(() => {
+  const getChartData = () => {
     if (!data) return [];
     
     // シンプルな収支グラフデータ
@@ -80,10 +78,10 @@ const chartData = React.useMemo(() => {
       { name: '費用', value: data.totalExpense },
       { name: '利益', value: data.totalProfit }
     ];
-  }, [data]);
+  };
   
   // カルテごとの売上・利益グラフデータ
-  const karteChartData = React.useMemo(() => {
+  const getKarteChartData = () => {
     if (!data || !data.karteList || data.karteList.length === 0) return [];
     
     return data.karteList
@@ -93,7 +91,7 @@ const chartData = React.useMemo(() => {
         revenue: karte.revenue || 0,
         profit: karte.profit || 0
       }));
-  }, [data]);
+  };
   
   // CSVエクスポート機能
   const exportCSV = () => {
